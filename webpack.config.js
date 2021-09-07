@@ -4,7 +4,6 @@ const vueLoaderPlugin = require('vue-loader/lib/plugin');
 module.exports = {
     context: path.resolve(__dirname, 'src'),
     entry: './index.js',
-    devtool: 'inline-source-map',
     mode: 'production',
     output: {
         filename: 'bundle.js',

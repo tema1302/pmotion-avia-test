@@ -28,11 +28,11 @@
           <div class="tickets-block__result-info">
               <div class="tickets-block__result-info_radio-filter">
                   <div class="options-box">
-                    <input type="radio" id="the-cheapest" checked>
+                    <input type="radio" name="radio-filter" id="the-cheapest" checked>
                     <label for="the-cheapest">
                         <span>Самый дешевый</span>
                     </label>
-                    <input type="radio" id="the-fastest">
+                    <input type="radio" name="radio-filter" id="the-fastest">
                     <label for="the-fastest">
                         <span>Самый быстрый</span>
                     </label>
@@ -40,7 +40,42 @@
                 </div>
               </div>
               <div class="tickets-block__result-info_tickets-item">
-
+                  <div class="top-info">
+                      <div class="price"></div>
+                      <div class="logo"></div>
+                  </div>
+                  <div class="bottom-info">
+                      <div class="tickets-item_data there">
+                          <div class="airports">
+                              <div class="airports-name title">MOW - HKT</div>
+                              <div class="time">10.10 - 00.50</div>
+                          </div>
+                          <div class="in-route">
+                              <div class="title">В пути</div>
+                              <div class="duration">21ч 15м</div>
+                          </div>
+                          <div class="transfers">
+                              <div class="num-transfers title">2 пересадки</div>
+                              <div class="airports-name">hkg, jnb</div>
+                          </div>
+                      </div>
+                      <div class="tickets-item_data back">
+                        <div class="tickets-item_data there">
+                          <div class="airports">
+                              <div class="airports-name title">MOW - HKT</div>
+                              <div class="time">10.10 - 00.50</div>
+                          </div>
+                          <div class="in-route">
+                              <div class="title">В пути</div>
+                              <div class="duration">21ч 15м</div>
+                          </div>
+                          <div class="transfers">
+                              <div class="num-transfers title">2 пересадки</div>
+                              <div class="airports-name">hkg, jnb</div>
+                          </div>
+                      </div>
+                      </div>
+                  </div>
               </div>
           </div>
       </div>
@@ -255,7 +290,7 @@ html {
                 #the-cheapest:checked {
                     &~.options-box {
                         &-roller {
-                        transform: translateX(-50%);
+                            transform: translateX(-50%);
                         }
                     }
                 }
@@ -263,7 +298,7 @@ html {
                 #the-fastest:checked {
                     &~.options-box {
                         &-roller {
-                        transform: translateX(50%);
+                            transform: translateX(50%);
                         }
                     }
                 }
@@ -272,7 +307,7 @@ html {
 
         /* END Checking the cheapest or the fastest variantes */
 
-        &_ticket {
+        &_tickets-item {
             @include whiteBlock;
         }
     }
