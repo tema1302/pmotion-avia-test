@@ -1,10 +1,11 @@
 const path = require('path');
 const vueLoaderPlugin = require('vue-loader/lib/plugin');
+require('babel-polyfill');
 
 module.exports = {
     context: path.resolve(__dirname, 'src'),
-    entry: './index.js',
-    mode: 'production',
+    entry: ['babel-polyfill', './index.js'],
+    mode: 'development',
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
@@ -47,5 +48,9 @@ module.exports = {
     ],
     devServer: {
         static: './dist'
-    }
+    },
+    performance: {
+        maxEntrypointSize: 512000,
+        maxAssetSize: 512000
+   }
 }
