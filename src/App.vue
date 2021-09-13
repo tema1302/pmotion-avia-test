@@ -1,39 +1,34 @@
 <template>
   <div class="wrapper">
-    <div class="img-container">
-      <img src="" alt="" />
-    </div>
     <div class="tickets-block">
       <div class="tickets-block__sidebar">
           
-        <!-- filter #1 -->
+        <!-- filter -->
         <div class="tickets-block__sidebar_transfer-number">
           <h3>Количество пересадок</h3>
-          <div class="loop">
-            <div
-              class="tickets-block__sidebar_transfer-number_check-wrapper"
-              v-for="(item, index) in transferNumber"
-              :key="index"
-            >
-              <input :id="index" type="checkbox" />
-              <label :for="index">
-                <span></span>
-                {{ item }}
-              </label>
-            </div>
+          <div
+            class="tickets-block__sidebar_transfer-number_check-wrapper"
+            v-for="(item, index) in transferNumber"
+            :key="index"
+          >
+            <input :id="index" type="checkbox" :value="index" v-model="checkedStopsNumber">
+            <label :for="index">
+              <span></span>
+              {{ item }}
+            </label>
           </div>
         </div>
       </div>
       <div class="tickets-block__result-info">
 
-        <!-- filter #2 -->
+        <!-- sorter -->
         <div class="tickets-block__result-info_radio-filter">
           <div class="options-box">
-            <input type="radio" name="radio-filter" id="the-cheapest" checked />
+            <input type="radio" name="radio-filter" id="the-cheapest" @change="sortArrByPrice()" checked>
             <label for="the-cheapest">
               <span>Самый дешевый</span>
             </label>
-            <input type="radio" name="radio-filter" id="the-fastest" />
+            <input type="radio" name="radio-filter" id="the-fastest" @change="sortArrByDuration()">
             <label for="the-fastest">
               <span>Самый быстрый</span>
             </label>
@@ -44,11 +39,11 @@
         <!-- blocks with tickets -->
         <div
           class="tickets-block__result-info_tickets-item"
-          v-for="(ticket, index) in tickets.slice(0, 5)"
+          v-for="(ticket, index) in filteredTickets.slice(0, 5)"
           :key="index"
         >
           <div class="top-info">
-            <div class="price">{{ ticket.price }} Р</div>
+            <div class="price">{{ ticket.price.toLocaleString('ru') }} Р</div>
             <div class="logo"></div>
           </div>
           <div class="bottom-info">
@@ -56,16 +51,31 @@
             <div class="tickets-item_data" v-for="(segment, index) in ticket.segments" :key="index">
               <div class="airports">
                 <div class="airports-name title">{{ segment.origin }} - {{ segment.destination }}</div>
-                <div class="time desc">10.10 - 00.50</div>
+                <div class="time desc">
+                  <span v-text="fetchHours(segment.date) < 10 ? '0' + fetchHours(segment.date) : fetchHours(segment.date)"></span><!--
+              --><span>:</span><!--
+              --><span v-text="fetchMinutes(segment.date) < 10 ? '0' + fetchMinutes(segment.date) : fetchMinutes(segment.date)"></span>
+              
+                  <span>-</span>
+
+                  <span v-text="countArrivalTime(fetchTimeForArrival(segment.date), segment.duration*60*1000)"></span>
+                </div>
               </div>
               <div class="in-route">
                 <div class="title">В пути</div>
-                <div class="duration desc">21ч 15м</div>
+                <div class="duration desc">
+                  {{ Math.floor(segment.duration / 60) }}ч
+                  {{ segment.duration % 60 < 10 ? '0' + segment.duration % 60 : segment.duration % 60 }}м
+                </div>
               </div>
               <div class="transfers">
-                <div class="num-transfers title">{{ segment.stops.length }} пересадки</div>
+                <div class="num-transfers title">
+                  {{ stopsAndTheirNumber(segment.stops.length) }}
+                </div>
                 <div class="airports-name desc">
-                  <span v-for="(airport, index) in segment.stops" :key="index">{{ airport }}, </span>
+                  <span v-for="(airport, index) in segment.stops" :key="index">
+                    {{ airport }}{{ (index < segment.stops.length - 1) ? ', ' : '' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -85,14 +95,15 @@ export default {
   data() {
     return {
       searchId: String,
-      tickets: Array,
+      tickets: [],
       transferNumber: [
-        'Все',
         'Без пересадок',
         '1 пересадка',
         '2 пересадки',
         '3 пересадки'
-      ]
+      ],
+      checkedStopsNumber: [],
+      console: []
     };
   },
   async mounted() {
@@ -104,10 +115,70 @@ export default {
       .get(`${baseURI}tickets?searchId=${this.searchId}`)
       .then((response) => (this.tickets = response.data.tickets))
       .catch((error) => console.log(error));
-    
+    this.tickets.sort((a, b) => a.price - b.price);
+  },
+  computed: {
+    filteredTickets() {
+      let data = [];
+
+      if(this.checkedStopsNumber.length) {
+
+        data = this.tickets.filter(ticket => this.checkedStopsNumber.indexOf(ticket.segments[0].stops.length) != -1)
+      } else {
+        data = this.tickets
+      }
+      return data;
+    }
   },
   methods: {
-    getTickets() {},
+    sortArrByPrice() {
+      this.tickets.sort((a, b) => a.price - b.price);
+    },
+    sortArrByDuration() {
+      this.tickets.sort((a, b) => {
+        let generalDurationA = 0;
+        let generalDurationB = 0;
+        a.segments.forEach(segment => generalDurationA += segment.duration);
+        b.segments.forEach(segment => generalDurationB += segment.duration);
+        return generalDurationA - generalDurationB;
+      });
+    },
+    filterArrByTransfNum(checkedTrunsferNum) {
+      console.log(checkedTrunsferNum)
+      if(typeof checkedTrunsferNum == 'number') {
+        const resultArr = this.tickets.filter(ticket => ticket.segments[0].stops.length == checkedTrunsferNum);
+        this.tickets = resultArr;
+      } else {
+        this.tickets - this.nonFilteredTickets;
+      }
+    },
+    fetchHours(date) {
+      return new Date(Date.parse(date)).getHours();
+    },
+    fetchMinutes(date) {
+      return new Date(Date.parse(date)).getMinutes();
+    },
+    fetchTimeForArrival(date) {
+      return new Date(Date.parse(date)).getTime();
+    },
+    countArrivalTime(depatureTime, duration) {
+      let arrivalTimeInMillisec = depatureTime + duration;
+
+      let fetchHours = new Date(arrivalTimeInMillisec).getHours();
+      fetchHours = fetchHours < 10 ? '0' + fetchHours : fetchHours; 
+
+      let fetchMinutes = new Date(arrivalTimeInMillisec).getMinutes();
+      fetchMinutes = fetchMinutes < 10 ? '0' + fetchMinutes : fetchMinutes; 
+      return `${fetchHours}:${fetchMinutes}`;
+    },
+    stopsAndTheirNumber(stopsNum) {
+      for(let i = 0; i <= stopsNum; i++) {
+        switch(stopsNum) {
+          case i: return this.transferNumber[i];
+        }
+      }
+    },
+    
   },
 };
 </script>
@@ -144,16 +215,8 @@ img {
 html {
   background: #f3f7fa;
   font-size: 16px;
-  font-family: Inter, Tahoma, sans-serif;
+  font-family: Tahoma, sans-serif;
 }
-
-// @font-face {
-//     font-family: 'Inter';
-//     src: url('Inter-Regular.woff2') format('woff2'),
-//         url('Inter-Regular.woff') format('woff');
-//     font-weight: normal;
-//     font-style: normal;
-// }
 
 .wrapper {
   max-width: 960px;
@@ -161,10 +224,6 @@ html {
   margin: 0 auto;
 }
 
-.img-container {
-  max-width: 300px;
-  margin: 0 auto;
-}
 .tickets-block {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
@@ -391,8 +450,15 @@ html {
     &__sidebar {
       margin-bottom: 2rem;
     }
-    &__result-info {
-      grid-area: result;
+  }
+}
+@media screen and (max-width: 576px) {
+  .tickets-block__result-info_tickets-item .bottom-info .tickets-item_data {
+    display: flex;
+    flex-wrap: wrap;
+    & > div {
+      flex-grow: 1;
+      padding: 0 .75rem;
     }
   }
 }
